@@ -423,9 +423,12 @@ def generate_html_email_body(data):
 
     # 4개 카테고리 순서 엄격 고정: 1. Cape Town -> 2. Seoul -> 3. Jeju -> 4. Special Airlines deals
     sections = [
-        ('capetown_deals', '🇿🇦 1. [Cape Town | 케이프타운] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
-        ('seoul_deals', '🇰🇷 2. [Seoul | 서울] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
-        ('jeju_deals', '🍊 3. [Jeju | 제주] 관광 & 특산물 식료품 공짜 · 특가 · 세일', True),
+        ('capetown_grocery', '🇿🇦 1-1. [Cape Town | 케이프타운] 🛒 [식료품] 마트 & 식자재 공짜 · 특가 · 세일', True),
+        ('capetown_nongrocery', '🇿🇦 1-2. [Cape Town | 케이프타운] 🏨 [식료품 이외] 관광 · 숙박 · 체험 · 기타 특가', True),
+        ('seoul_grocery', '🇰🇷 2-1. [Seoul | 서울] 🛒 [식료품] 대형마트 & 식자재 공짜 · 특가 · 세일', True),
+        ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
+        ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
+        ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
         ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
     ]
 
@@ -474,8 +477,7 @@ def send_email_with_pdf(pdf_bytes, report_data, recipients=None):
         if env_recipients:
             recipients = [r.strip() for r in env_recipients.split(",") if r.strip()]
         else:
-            recipients = ["pj2gwk@gmail.com"]
-#                        recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com"]
+            recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com"]
         
     sender_user = os.environ.get("EMAIL_USER")
     sender_pass = os.environ.get("EMAIL_PASS")
@@ -638,22 +640,37 @@ def select_top_shorts_topics(data):
     seen_titles = set()
 
     sections_mapping = [
-        ('capetown_deals', '🇿🇦 케이프타운 관광 & 마트 세일',
-         '케이프타운 현지 로컬 투어 및 주요 식료품 마트 파격 할인 소식',
-         '"케이프타운에서 지금 이 가격? 여행 가기 전 필수 확인 특가!"',
-         '[0~3초] 할인율/공짜 혜택 강조 → [3~20초] 혜택 및 장소 안내 → [20~30초] "친구 태그" 유도'),
+        ('capetown_grocery', '🇿🇦 케이프타운 식료품',
+         '케이프타운 주요 슈퍼마켓(Checkers, Pick n Pay 등) 식료품 세일 소식',
+         '"케이프타운 마트 장보기 특가 할인! 오늘 장보러 가기 전 필독!"',
+         '[0~3초] 파격 할인 품목 강조 → [3~20초] 마트 혜택 정보 → [20~30초] "공유하기" 유도'),
          
-        ('seoul_deals', '🇰🇷 서울 관광 & 마트 세일',
-         '서울 수도권 대형마트 특가 세일 및 무료 전시/관광 프로모션',
-         '"서울 사람들도 난리 난 미친 할인 혜택, 오늘만 이 가격!"',
-         '[0~3초] 3초 훅 멘트 → [3~20초] 혜택 품목 3가지 요약 → [20~30초] 댓글 참여 유도'),
-         
-        ('jeju_deals', '🍊 제주 관광 & 특산물 세일',
-         '제주도 항공권, 호텔 얼리버드 및 로컬 식료품/특산물 혜택',
-         '"제주도 비행기표/특산물 실화? 혜택 끝나기 전에 저장하세요!"',
-         '[0~3초] 제주도 전경/특산물 훅 → [3~20초] 프로모션 정보 안내 → [20~30초] 공유 유도'),
+        ('capetown_nongrocery', '🇿🇦 케이프타운 관광/숙박',
+         '케이프타운 로컬 투어, 호텔 및 관광지 무료/할인 입장 혜택',
+         '"케이프타운 여행객 필수! 지금 진행 중인 파격 관광 혜택!"',
+         '[0~3초] 3초 훅 멘트 → [3~20초] 주요 관광/숙박 혜택 안내 → [20~30초] "친구 태그" 유도'),
 
-        ('airline_deals', '✈️ 다구간/경유 특별 항공권 특가',
+        ('seoul_grocery', '🇰🇷 서울 식료품/마트',
+         '서울 대형마트(이마트, 롯데마트, 홈플러스) 반값 세일 및 1+1 혜택',
+         '"서울 대형마트 오늘부터 미친 세일! 이건 무조건 담아야 함!"',
+         '[0~3초] 1+1/반값 세일 훅 → [3~20초] 베스트 할인 품목 → [20~30초] 댓글 참여 유도'),
+
+        ('seoul_nongrocery', '🇰🇷 서울 관광/문화',
+         '서울 수도권 무료 전시, 축제, 호텔 얼리버드 및 문화 혜택',
+         '"서울에서 공짜로 즐기는 역대급 혜택, 이번 주말 가볼만한 곳!"',
+         '[0~3초] 무료/할인 훅 → [3~20초] 행사 위치 및 기간 → [20~30초] "저장해두기"'),
+
+        ('jeju_grocery', '🍊 제주 특산물/식료품',
+         '제주 감귤, 흑돼지, 수산물 등 로컬 특산물 및 마트 직송 할인',
+         '"제주도 특산물 직송 파격 할인가! 지금 사야 제일 쌉니다!"',
+         '[0~3초] 제주 특산물 visual 훅 → [3~20초] 할인 정보 → [20~30초] 구매 유도'),
+
+        ('jeju_nongrocery', '🍊 제주 관광/항공/숙박',
+         '제주도 초특가 항공권, 렌터카 및 리조트/호텔 프로모션',
+         '"제주도 비행기표/렌터카 미친 특가 떴다! 지금 예약하세요!"',
+         '[0~3초] 항공/렌터카 가격 훅 → [3~20초] 예약 정보 → [20~30초] 공유 유도'),
+
+        ('airline_deals', '✈️ 다구간 항공권 특가',
          '케이프타운·두바이·도하·싱가포르·서울·제주 연결 다구간/경유 항공권 파격 특가',
          '"두바이/도하 경유 남아공-한국 비행기표 미친 특가 나왔다!"',
          '[0~3초] 다구간 경유 가격 훅 → [3~20초] 항공사 및 노선 안내 → [20~30초] "저장해두고 예매하기"')
@@ -695,13 +712,16 @@ def generate_report_data(service, folder_id):
     new_cache = {}
 
     queries_za = {
-        'capetown_deals': '("Cape Town" OR "Western Cape") (discount OR deal OR special OR offer OR "free entry" OR promo OR tourism OR hotel OR flight OR grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths)',
+        'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo)',
+        'capetown_nongrocery': '("Cape Town" OR "Western Cape") (tourism OR hotel OR flight OR attraction OR museum OR tour OR event OR festival OR ticket OR rental OR discount OR deal OR special OR offer OR "free entry" OR promo)',
         'airline_deals_za': '("Cape Town" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
     }
 
     queries_kr = {
-        'seoul_deals': '서울 (관광 OR 여행 OR 호텔 OR 프로모션 OR 할인 OR 무료 OR 혜택 OR 축제 OR 식료품 OR 마트 OR 이마트 OR 롯데마트 OR 홈플러스 OR 세일 OR 1+1)',
-        'jeju_deals': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 프로모션 OR 할인 OR 혜택 OR 올레길 OR 식료품 OR 특산물 OR 마트 OR 세일)',
+        'seoul_grocery': '서울 (식료품 OR 마트 OR 이마트 OR 롯데마트 OR 홈플러스 OR 야채 OR 과일 OR 정육 OR 수산 OR 할인 OR 세일 OR 1+1 OR 반값)',
+        'seoul_nongrocery': '서울 (관광 OR 여행 OR 호텔 OR 숙박 OR 티켓 OR 전시 OR 공연 OR 축제 OR 무료 OR 혜택 OR 프로모션 OR 할인 OR 세일)',
+        'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1)',
+        'jeju_nongrocery': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 리조트 OR 렌터카 OR 올레길 OR 입장권 OR 혜택 OR 할인 OR 프로모션)',
         'airline_deals_kr': '(서울 OR 제주 OR 케이프타운 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
     }
 
@@ -710,33 +730,54 @@ def generate_report_data(service, folder_id):
         'now_kst_str': now_kst.strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    # 1. Cape Town Deals (limit=20)
-    raw_ct = fetch_google_news_rss_realtime(queries_za['capetown_deals'], lang_zone="ZA")
-    cached_ct = old_cache.get('capetown_deals', [])
-    merged_ct = merge_and_filter_entries(raw_ct, cached_ct, max_hours=24, limit=20)
-    report_data['capetown_deals'] = merged_ct
-    new_cache['capetown_deals'] = merged_ct
+    # 1-1. Cape Town Grocery Deals (limit=15)
+    raw_ct_g = fetch_google_news_rss_realtime(queries_za['capetown_grocery'], lang_zone="ZA")
+    cached_ct_g = old_cache.get('capetown_grocery', [])
+    merged_ct_g = merge_and_filter_entries(raw_ct_g, cached_ct_g, max_hours=24, limit=15)
+    report_data['capetown_grocery'] = merged_ct_g
+    new_cache['capetown_grocery'] = merged_ct_g
 
-    # 2. Seoul Deals (limit=20)
-    raw_seoul = fetch_google_news_rss_realtime(queries_kr['seoul_deals'], lang_zone="KR")
-    cached_seoul = old_cache.get('seoul_deals', [])
-    merged_seoul = merge_and_filter_entries(raw_seoul, cached_seoul, max_hours=24, limit=20)
-    report_data['seoul_deals'] = merged_seoul
-    new_cache['seoul_deals'] = merged_seoul
+    # 1-2. Cape Town Non-Grocery Deals (limit=15)
+    raw_ct_ng = fetch_google_news_rss_realtime(queries_za['capetown_nongrocery'], lang_zone="ZA")
+    cached_ct_ng = old_cache.get('capetown_nongrocery', [])
+    merged_ct_ng = merge_and_filter_entries(raw_ct_ng, cached_ct_ng, max_hours=24, limit=15)
+    report_data['capetown_nongrocery'] = merged_ct_ng
+    new_cache['capetown_nongrocery'] = merged_ct_ng
 
-    # 3. Jeju Deals (limit=20)
-    raw_jeju = fetch_google_news_rss_realtime(queries_kr['jeju_deals'], lang_zone="KR")
-    cached_jeju = old_cache.get('jeju_deals', [])
-    merged_jeju = merge_and_filter_entries(raw_jeju, cached_jeju, max_hours=24, limit=20)
-    report_data['jeju_deals'] = merged_jeju
-    new_cache['jeju_deals'] = merged_jeju
+    # 2-1. Seoul Grocery Deals (limit=15)
+    raw_seoul_g = fetch_google_news_rss_realtime(queries_kr['seoul_grocery'], lang_zone="KR")
+    cached_seoul_g = old_cache.get('seoul_grocery', [])
+    merged_seoul_g = merge_and_filter_entries(raw_seoul_g, cached_seoul_g, max_hours=24, limit=15)
+    report_data['seoul_grocery'] = merged_seoul_g
+    new_cache['seoul_grocery'] = merged_seoul_g
 
-    # 4. Special Airlines Deals (Cape Town, Dubai, Doha, Singapore, Seoul, Jeju 다구간/경유) (limit=20)
+    # 2-2. Seoul Non-Grocery Deals (limit=15)
+    raw_seoul_ng = fetch_google_news_rss_realtime(queries_kr['seoul_nongrocery'], lang_zone="KR")
+    cached_seoul_ng = old_cache.get('seoul_nongrocery', [])
+    merged_seoul_ng = merge_and_filter_entries(raw_seoul_ng, cached_seoul_ng, max_hours=24, limit=15)
+    report_data['seoul_nongrocery'] = merged_seoul_ng
+    new_cache['seoul_nongrocery'] = merged_seoul_ng
+
+    # 3-1. Jeju Grocery Deals (limit=15)
+    raw_jeju_g = fetch_google_news_rss_realtime(queries_kr['jeju_grocery'], lang_zone="KR")
+    cached_jeju_g = old_cache.get('jeju_grocery', [])
+    merged_jeju_g = merge_and_filter_entries(raw_jeju_g, cached_jeju_g, max_hours=24, limit=15)
+    report_data['jeju_grocery'] = merged_jeju_g
+    new_cache['jeju_grocery'] = merged_jeju_g
+
+    # 3-2. Jeju Non-Grocery Deals (limit=15)
+    raw_jeju_ng = fetch_google_news_rss_realtime(queries_kr['jeju_nongrocery'], lang_zone="KR")
+    cached_jeju_ng = old_cache.get('jeju_nongrocery', [])
+    merged_jeju_ng = merge_and_filter_entries(raw_jeju_ng, cached_jeju_ng, max_hours=24, limit=15)
+    report_data['jeju_nongrocery'] = merged_jeju_ng
+    new_cache['jeju_nongrocery'] = merged_jeju_ng
+
+    # 4. Special Airlines Deals (limit=15)
     raw_al_za = fetch_google_news_rss_realtime(queries_za['airline_deals_za'], lang_zone="ZA")
     raw_al_kr = fetch_google_news_rss_realtime(queries_kr['airline_deals_kr'], lang_zone="KR")
     raw_al = raw_al_za + raw_al_kr
     cached_al = old_cache.get('airline_deals', [])
-    merged_al = merge_and_filter_entries(raw_al, cached_al, max_hours=24, limit=20)
+    merged_al = merge_and_filter_entries(raw_al, cached_al, max_hours=24, limit=15)
     report_data['airline_deals'] = merged_al
     new_cache['airline_deals'] = merged_al
 
@@ -881,9 +922,12 @@ def create_pdf_bytes(data):
         return t
 
     sections = [
-        ('capetown_deals', '🇿🇦 1. [Cape Town | 케이프타운] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
-        ('seoul_deals', '🇰🇷 2. [Seoul | 서울] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
-        ('jeju_deals', '🍊 3. [Jeju | 제주] 관광 & 특산물 식료품 공짜 · 특가 · 세일', True),
+        ('capetown_grocery', '🇿🇦 1-1. [Cape Town | 케이프타운] 🛒 [식료품] 마트 & 식자재 공짜 · 특가 · 세일', True),
+        ('capetown_nongrocery', '🇿🇦 1-2. [Cape Town | 케이프타운] 🏨 [식료품 이외] 관광 · 숙박 · 체험 · 기타 특가', True),
+        ('seoul_grocery', '🇰🇷 2-1. [Seoul | 서울] 🛒 [식료품] 대형마트 & 식자재 공짜 · 특가 · 세일', True),
+        ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
+        ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
+        ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
         ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
     ]
 
