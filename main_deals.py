@@ -220,7 +220,8 @@ def decode_google_news_url(url, title=""):
 
 def evaluate_deal_priority_score(title, text=""):
     """
-    Deals & Specials 파급력 및 우선순위 산정 함수 (가장 큰 혜택이 상위 배치되도록 점수화):
+    Deals & Specials 파급력 및 우선순위 산정 함수:
+    - ✈️ 케이프타운 · 서울 출발/도착 항공권 특가: 단연 1위 (105~110점 최상위)
     - 공짜/무료/1+1: 100점
     - 반값/50% 이상 초특가: 85점
     - 일반 할인/프로모션: 70점
@@ -228,6 +229,17 @@ def evaluate_deal_priority_score(title, text=""):
     """
     full_text = (title + " " + text).lower()
     
+    is_airline_deal = any(k in full_text for k in ["항공권", "flight", "airline", "비행기표", "티켓", "ticket", "다구간", "경유", "layover", "transit", "fare"])
+    has_capetown = any(k in full_text for k in ["케이프타운", "cape town", "cpt"])
+    has_seoul = any(k in full_text for k in ["서울", "seoul", "icn", "gmp"])
+    
+    # ✈️ 항공권 특가 중 출발지/도착지가 케이프타운 또는 서울인 경우 경유지 상관없이 최상위 P1 우선순위 부여
+    if is_airline_deal and (has_capetown or has_seoul):
+        if has_capetown and has_seoul:
+            return 110.0, "P1🔥 (케이프타운-서울 노선 최상위 특가)"
+        else:
+            return 105.0, "P1✈️ (케이프타운/서울 핵심 노선 항공 특가)"
+
     has_free = any(k in full_text for k in ["공짜", "무료", "free", "0원", "무료입장", "1+1", "free ticket"])
     has_big_discount = any(k in full_text for k in ["특가", "반값", "50%", "70%", "80%", "초특가", "할인", "sale", "special", "deal", "promo", "discount", "multi-city", "transit", "layover"])
     has_location = any(k in full_text for k in ["케이프타운", "cape town", "서울", "seoul", "제주", "jeju", "두바이", "dubai", "도하", "doha", "싱가포르", "singapore"])
@@ -429,7 +441,7 @@ def generate_html_email_body(data):
         ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
         ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
+        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
@@ -671,9 +683,9 @@ def select_top_shorts_topics(data):
          '[0~3초] 항공/렌터카 가격 훅 → [3~20초] 예약 정보 → [20~30초] 공유 유도'),
 
         ('airline_deals', '✈️ 다구간 항공권 특가',
-         '케이프타운·두바이·도하·싱가포르·서울·제주 연결 다구간/경유 항공권 파격 특가',
-         '"두바이/도하 경유 남아공-한국 비행기표 미친 특가 나왔다!"',
-         '[0~3초] 다구간 경유 가격 훅 → [3~20초] 항공사 및 노선 안내 → [20~30초] "저장해두고 예매하기"')
+         '케이프타운 · 서울 중심 (중간 경유지 불문) 다구간/경유 항공권 최상위 파격 특가',
+         '"케이프타운-서울 노선 미친 항공권 특가 나왔다! 경유지 상관없이 무조건 저장!"',
+         '[0~3초] 케이프타운/서울 항공권 가격 훅 → [3~20초] 항공사 및 경유지 안내 → [20~30초] "저장해두고 예매하기"')
     ]
 
     for sec_key, category_name, reason_fmt, hook_fmt, script_fmt in sections_mapping:
@@ -714,7 +726,7 @@ def generate_report_data(service, folder_id):
     queries_za = {
         'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo)',
         'capetown_nongrocery': '("Cape Town" OR "Western Cape") (tourism OR hotel OR flight OR attraction OR museum OR tour OR event OR festival OR ticket OR rental OR discount OR deal OR special OR offer OR "free entry" OR promo)',
-        'airline_deals_za': '("Cape Town" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
+        'airline_deals_za': '("Cape Town" OR "Seoul" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
     }
 
     queries_kr = {
@@ -722,7 +734,7 @@ def generate_report_data(service, folder_id):
         'seoul_nongrocery': '서울 (관광 OR 여행 OR 호텔 OR 숙박 OR 티켓 OR 전시 OR 공연 OR 축제 OR 무료 OR 혜택 OR 프로모션 OR 할인 OR 세일)',
         'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1)',
         'jeju_nongrocery': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 리조트 OR 렌터카 OR 올레길 OR 입장권 OR 혜택 OR 할인 OR 프로모션)',
-        'airline_deals_kr': '(서울 OR 제주 OR 케이프타운 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
+        'airline_deals_kr': '(케이프타운 OR 서울 OR 제주 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
     }
 
     report_data = {
@@ -928,7 +940,7 @@ def create_pdf_bytes(data):
         ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
         ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
+        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
