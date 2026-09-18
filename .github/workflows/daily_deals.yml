@@ -2,8 +2,8 @@ name: StariaPj Daily Deals Automation
 
 on:
   schedule:
-    # ⏰ 매일 한국 시각(KST) 오전 08:30 자동 발송 (UTC 23:30)
-    - cron: '30 23 * * *'
+    # ⏰ 매일 Cape Town 현지 시각 아침 07:00 자동 발송 (UTC 05:00 / KST 14:00)
+    - cron: '0 5 * * *'
   workflow_dispatch: # Actions 탭에서 수동 실행(Run workflow) 버튼 활성화
 
 jobs:
