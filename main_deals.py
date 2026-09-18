@@ -142,7 +142,7 @@ def detect_country_tag(title_raw, title_ko="", lang_zone=""):
     기사 헤드라인 태그 산출 함수 (반드시 [ZA], [KR], [NO] 중 하나만 정밀 반환):
     - ZA : 남아공/케이프타운 관련 소식
     - KR : 한국/서울/제주 관련 소식
-    - NO : 제3국 / 글로벌 / 두바이 / 도하 등 소식
+    - NO : 제3국 / 글로벌 / 두바이 / 도하 / 싱가포르 등 소식
     """
     clean_raw = clean_source_signature(title_raw)
     clean_ko = clean_source_signature(title_ko)
@@ -230,7 +230,7 @@ def evaluate_deal_priority_score(title, text=""):
     
     has_free = any(k in full_text for k in ["공짜", "무료", "free", "0원", "무료입장", "1+1", "free ticket"])
     has_big_discount = any(k in full_text for k in ["특가", "반값", "50%", "70%", "80%", "초특가", "할인", "sale", "special", "deal", "promo", "discount", "multi-city", "transit", "layover"])
-    has_location = any(k in full_text for k in ["케이프타운", "cape town", "서울", "seoul", "제주", "jeju", "두바이", "dubai", "도하", "doha"])
+    has_location = any(k in full_text for k in ["케이프타운", "cape town", "서울", "seoul", "제주", "jeju", "두바이", "dubai", "도하", "doha", "싱가포르", "singapore"])
     has_sector = any(k in full_text for k in ["관광", "tourism", "여행", "hotel", "항공권", "flight", "식료품", "grocery", "마트", "supermarket"])
     
     if has_free:
@@ -253,7 +253,7 @@ def calculate_google_trends_score(title):
     title_lower = title.lower()
     base_score = 75.0
     
-    viral_keywords = ["공짜", "무료", "free", "특가", "할인", "deal", "promo", "0원", "1+1", "반값", "케이프타운", "서울", "제주", "두바이", "도하", "항공권", "마트"]
+    viral_keywords = ["공짜", "무료", "free", "특가", "할인", "deal", "promo", "0원", "1+1", "반값", "케이프타운", "서울", "제주", "두바이", "도하", "싱가포르", "항공권", "마트"]
     for kw in viral_keywords:
         if kw in title_lower:
             base_score += 3.0
@@ -420,7 +420,7 @@ def generate_html_email_body(data):
         ('capetown_deals', '🇿🇦 1. [Cape Town | 케이프타운] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
         ('seoul_deals', '🇰🇷 2. [Seoul | 서울] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
         ('jeju_deals', '🍊 3. [Jeju | 제주] 관광 & 특산물 식료품 공짜 · 특가 · 세일', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 서울 · 제주 다구간/경유 항공권 특가', True)
+        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
@@ -469,7 +469,7 @@ def send_email_with_pdf(pdf_bytes, report_data, recipients=None):
             recipients = [r.strip() for r in env_recipients.split(",") if r.strip()]
         else:
             recipients = ["pj2gwk@gmail.com"]
- #  recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com"]
+#                        recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com"]
         
     sender_user = os.environ.get("EMAIL_USER")
     sender_pass = os.environ.get("EMAIL_PASS")
@@ -648,7 +648,7 @@ def select_top_shorts_topics(data):
          '[0~3초] 제주도 전경/특산물 훅 → [3~20초] 프로모션 정보 안내 → [20~30초] 공유 유도'),
 
         ('airline_deals', '✈️ 다구간/경유 특별 항공권 특가',
-         '케이프타운·두바이·도하·서울·제주 연결 다구간/경유 항공권 파격 특가',
+         '케이프타운·두바이·도하·싱가포르·서울·제주 연결 다구간/경유 항공권 파격 특가',
          '"두바이/도하 경유 남아공-한국 비행기표 미친 특가 나왔다!"',
          '[0~3초] 다구간 경유 가격 훅 → [3~20초] 항공사 및 노선 안내 → [20~30초] "저장해두고 예매하기"')
     ]
@@ -690,13 +690,13 @@ def generate_report_data(service, folder_id):
 
     queries_za = {
         'capetown_deals': '("Cape Town" OR "Western Cape") (discount OR deal OR special OR offer OR "free entry" OR promo OR tourism OR hotel OR flight OR grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths)',
-        'airline_deals_za': '("Cape Town" OR "Dubai" OR "Doha" OR "Emirates" OR "Qatar Airways" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
+        'airline_deals_za': '("Cape Town" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
     }
 
     queries_kr = {
         'seoul_deals': '서울 (관광 OR 여행 OR 호텔 OR 프로모션 OR 할인 OR 무료 OR 혜택 OR 축제 OR 식료품 OR 마트 OR 이마트 OR 롯데마트 OR 홈플러스 OR 세일 OR 1+1)',
         'jeju_deals': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 프로모션 OR 할인 OR 혜택 OR 올레길 OR 식료품 OR 특산물 OR 마트 OR 세일)',
-        'airline_deals_kr': '(서울 OR 제주 OR 케이프타운 OR 두바이 OR 도하) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
+        'airline_deals_kr': '(서울 OR 제주 OR 케이프타운 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
     }
 
     report_data = {
@@ -725,7 +725,7 @@ def generate_report_data(service, folder_id):
     report_data['jeju_deals'] = merged_jeju
     new_cache['jeju_deals'] = merged_jeju
 
-    # 4. Special Airlines Deals (Cape Town, Dubai, Doha, Seoul, Jeju 다구간/경유) (limit=20)
+    # 4. Special Airlines Deals (Cape Town, Dubai, Doha, Singapore, Seoul, Jeju 다구간/경유) (limit=20)
     raw_al_za = fetch_google_news_rss_realtime(queries_za['airline_deals_za'], lang_zone="ZA")
     raw_al_kr = fetch_google_news_rss_realtime(queries_kr['airline_deals_kr'], lang_zone="KR")
     raw_al = raw_al_za + raw_al_kr
@@ -878,7 +878,7 @@ def create_pdf_bytes(data):
         ('capetown_deals', '🇿🇦 1. [Cape Town | 케이프타운] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
         ('seoul_deals', '🇰🇷 2. [Seoul | 서울] 관광 & 식료품 마트 공짜 · 특가 · 세일', True),
         ('jeju_deals', '🍊 3. [Jeju | 제주] 관광 & 특산물 식료품 공짜 · 특가 · 세일', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 서울 · 제주 다구간/경유 항공권 특가', True)
+        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 두바이 · 도하 · 싱가포르 · 서울 · 제주 다구간/경유 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
