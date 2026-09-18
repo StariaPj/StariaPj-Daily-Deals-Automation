@@ -540,7 +540,8 @@ def send_email_with_pdf(pdf_bytes, report_data, recipients=None):
         print(f"❌ Deals 이메일 발송 오류: {e}")
 
 def fetch_google_news_rss_realtime(query, lang_zone="KR", max_hours=24):
-    realtime_query = f"{query} when:1d"
+    days = max(1, max_hours // 24)
+    realtime_query = f"{query} when:{days}d"
     encoded_query = urllib.parse.quote(realtime_query)
     
     if lang_zone == "ZA":
@@ -768,21 +769,21 @@ def generate_report_data(service, folder_id):
     new_cache = {}
 
     queries_za = {
-        'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo)',
+        'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo OR "weekly ad" OR flyer OR savings)',
         'capetown_nongrocery': '("Cape Town" OR "Western Cape") (tourism OR hotel OR flight OR attraction OR museum OR tour OR event OR festival OR ticket OR rental OR discount OR deal OR special OR offer OR "free entry" OR promo)',
         'airline_deals_za': '("Cape Town" OR "Seoul" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
     }
 
     queries_kr = {
-        'seoul_grocery': '서울 (식료품 OR 마트 OR 이마트 OR 롯데마트 OR 홈플러스 OR 야채 OR 과일 OR 정육 OR 수산 OR 할인 OR 세일 OR 1+1 OR 반값)',
+        'seoul_grocery': '서울 (식료품 OR 마트 OR 이마트 OR 롯데마트 OR 홈플러스 OR 야채 OR 과일 OR 정육 OR 수산 OR 할인 OR 세일 OR 1+1 OR 반값 OR 전단 OR 전단지 OR 주간세일 OR 물가안정 OR 초특가)',
         'seoul_nongrocery': '서울 (관광 OR 여행 OR 호텔 OR 숙박 OR 티켓 OR 전시 OR 공연 OR 축제 OR 무료 OR 혜택 OR 프로모션 OR 할인 OR 세일)',
-        'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1)',
+        'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1 OR 전단 OR 직송 OR 초특가)',
         'jeju_nongrocery': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 리조트 OR 렌터카 OR 올레길 OR 입장권 OR 혜택 OR 할인 OR 프로모션)',
         'airline_deals_kr': '(케이프타운 OR 서울 OR 제주 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
     }
 
     queries_us = {
-        'sanmarcos_grocery': '("San Marcos" AND "Texas") (grocery OR supermarket OR HEB OR "H-E-B" OR Walmart OR Target OR food OR meat OR produce OR discount OR deal OR special OR promo)',
+        'sanmarcos_grocery': '("San Marcos" OR "Hays County" OR "Austin") (grocery OR supermarket OR HEB OR "H-E-B" OR Walmart OR Target OR food OR meat OR produce OR discount OR deal OR special OR promo OR "weekly ad" OR flyer OR circular)',
         'sanmarcos_nongrocery': '("San Marcos" AND "Texas") (outlet OR shopping OR "San Marcos Premium Outlets" OR Tanger OR hotel OR tourism OR river OR tour OR event OR ticket OR discount OR deal OR special OR offer OR "free entry" OR promo)'
     }
 
@@ -791,10 +792,10 @@ def generate_report_data(service, folder_id):
         'now_kst_str': now_kst.strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    # 1-1. Cape Town Grocery Deals (limit=15)
-    raw_ct_g = fetch_google_news_rss_realtime(queries_za['capetown_grocery'], lang_zone="ZA")
+    # 1-1. Cape Town Grocery Deals (limit=15, 3-day search window)
+    raw_ct_g = fetch_google_news_rss_realtime(queries_za['capetown_grocery'], lang_zone="ZA", max_hours=72)
     cached_ct_g = old_cache.get('capetown_grocery', [])
-    merged_ct_g = merge_and_filter_entries(raw_ct_g, cached_ct_g, max_hours=24, limit=15)
+    merged_ct_g = merge_and_filter_entries(raw_ct_g, cached_ct_g, max_hours=72, limit=15)
     report_data['capetown_grocery'] = merged_ct_g
     new_cache['capetown_grocery'] = merged_ct_g
 
@@ -805,10 +806,10 @@ def generate_report_data(service, folder_id):
     report_data['capetown_nongrocery'] = merged_ct_ng
     new_cache['capetown_nongrocery'] = merged_ct_ng
 
-    # 2-1. Seoul Grocery Deals (limit=15)
-    raw_seoul_g = fetch_google_news_rss_realtime(queries_kr['seoul_grocery'], lang_zone="KR")
+    # 2-1. Seoul Grocery Deals (limit=15, 3-day search window)
+    raw_seoul_g = fetch_google_news_rss_realtime(queries_kr['seoul_grocery'], lang_zone="KR", max_hours=72)
     cached_seoul_g = old_cache.get('seoul_grocery', [])
-    merged_seoul_g = merge_and_filter_entries(raw_seoul_g, cached_seoul_g, max_hours=24, limit=15)
+    merged_seoul_g = merge_and_filter_entries(raw_seoul_g, cached_seoul_g, max_hours=72, limit=15)
     report_data['seoul_grocery'] = merged_seoul_g
     new_cache['seoul_grocery'] = merged_seoul_g
 
@@ -819,10 +820,10 @@ def generate_report_data(service, folder_id):
     report_data['seoul_nongrocery'] = merged_seoul_ng
     new_cache['seoul_nongrocery'] = merged_seoul_ng
 
-    # 3-1. Jeju Grocery Deals (limit=15)
-    raw_jeju_g = fetch_google_news_rss_realtime(queries_kr['jeju_grocery'], lang_zone="KR")
+    # 3-1. Jeju Grocery Deals (limit=15, 3-day search window)
+    raw_jeju_g = fetch_google_news_rss_realtime(queries_kr['jeju_grocery'], lang_zone="KR", max_hours=72)
     cached_jeju_g = old_cache.get('jeju_grocery', [])
-    merged_jeju_g = merge_and_filter_entries(raw_jeju_g, cached_jeju_g, max_hours=24, limit=15)
+    merged_jeju_g = merge_and_filter_entries(raw_jeju_g, cached_jeju_g, max_hours=72, limit=15)
     report_data['jeju_grocery'] = merged_jeju_g
     new_cache['jeju_grocery'] = merged_jeju_g
 
@@ -833,10 +834,10 @@ def generate_report_data(service, folder_id):
     report_data['jeju_nongrocery'] = merged_jeju_ng
     new_cache['jeju_nongrocery'] = merged_jeju_ng
 
-    # 4-1. San Marcos Grocery Deals (limit=15)
-    raw_sm_g = fetch_google_news_rss_realtime(queries_us['sanmarcos_grocery'], lang_zone="US")
+    # 4-1. San Marcos Grocery Deals (limit=15, 3-day search window)
+    raw_sm_g = fetch_google_news_rss_realtime(queries_us['sanmarcos_grocery'], lang_zone="US", max_hours=72)
     cached_sm_g = old_cache.get('sanmarcos_grocery', [])
-    merged_sm_g = merge_and_filter_entries(raw_sm_g, cached_sm_g, max_hours=24, limit=15)
+    merged_sm_g = merge_and_filter_entries(raw_sm_g, cached_sm_g, max_hours=72, limit=15)
     report_data['sanmarcos_grocery'] = merged_sm_g
     new_cache['sanmarcos_grocery'] = merged_sm_g
 
@@ -1135,4 +1136,7 @@ if __name__ == "__main__":
 - v10.0 (2026-09-18):
     1. Added 4th city: San Marcos, Texas (🇺🇸 [San Marcos, Texas] 🛒 식료품 / 🛍️ 아울렛·쇼핑·관광·기타 특가).
     2. Relocated Special Airlines Deals (항공권 특가) to the final section (Section 5).
+- v11.0 (2026-09-18):
+    1. Extended grocery deal search window to 3 days (when:3d, max_hours=72) across all regions (Cape Town, Seoul, Jeju, San Marcos).
+    2. Expanded grocery search queries with press releases, weekly ads, flyers, circulars, and promotion keywords to maximize grocery deal retrieval.
 """
