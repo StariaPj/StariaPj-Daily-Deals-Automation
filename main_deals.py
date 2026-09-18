@@ -1080,3 +1080,23 @@ if __name__ == "__main__":
     upload_json_to_gdrive(service, folder_id, report_data['new_cache'], report_data['time_str'])
     save_gdrive_cache(service, folder_id, report_data['new_cache'])
     send_email_with_pdf(pdf_bytes, report_data)
+
+
+# ==============================================================================
+# 📜 VERSION HISTORY (버전 변경 이력)
+# ==============================================================================
+"""
+[Version History]
+
+- v1.0 (2026-09-18): Initial Deals & Specials Automation Script setup.
+- v2.0 (2026-09-18): Google Drive cache synchronization and Google Trends score integration.
+- v3.0 (2026-09-18): Shorts TOP 3 viral recommendation algorithm & HTML/PDF email templates.
+- v4.0 (2026-09-18): Cape Town, Seoul, Jeju, Special Airlines deal search query refinements.
+- v5.0 (2026-09-18): Region deal categorization into Grocery (식료품) vs Non-Grocery (식료품 이외).
+- v6.0 (2026-09-18): Special Airlines Deals priority logic updated (Cape Town / Seoul routes ranked P1+).
+- v7.0 (2026-09-18):
+    1. Fixed misleading concert/event ticket detection under airline deals (refined keywords).
+    2. Fact-based 3초 Hook & 30초 Shorts script generation based on actual article titles.
+- v8.0 (2026-09-18): Added hyperlinked titles to Shorts TOP 3 section for direct article access.
+- v9.0 (2026-09-18): Appended automated Version History block at the end of code.
+"""
