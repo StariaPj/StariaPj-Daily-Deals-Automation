@@ -229,11 +229,15 @@ def evaluate_deal_priority_score(title, text=""):
     """
     full_text = (title + " " + text).lower()
     
-    is_airline_deal = any(k in full_text for k in ["항공권", "flight", "airline", "비행기표", "티켓", "ticket", "다구간", "경유", "layover", "transit", "fare"])
+    # ✈️ 항공권/비행기표 전용 키워드 (단독 '티켓'/'ticket'은 공연/전시 티켓과 오인되므로 제외)
+    is_airline_deal = any(k in full_text for k in [
+        "항공권", "비행기표", "항공 노선", "flight", "airline", "airfare", 
+        "flight ticket", "plane ticket", "다구간 항공", "경유 항공", "국제선", "국내선"
+    ])
     has_capetown = any(k in full_text for k in ["케이프타운", "cape town", "cpt"])
     has_seoul = any(k in full_text for k in ["서울", "seoul", "icn", "gmp"])
     
-    # ✈️ 항공권 특가 중 출발지/도착지가 케이프타운 또는 서울인 경우 경유지 상관없이 최상위 P1 우선순위 부여
+    # 항공권 특가 중 출발지/도착지가 케이프타운 또는 서울인 경우 경유지 상관없이 최상위 P1 우선순위 부여
     if is_airline_deal and (has_capetown or has_seoul):
         if has_capetown and has_seoul:
             return 110.0, "P1🔥 (케이프타운-서울 노선 최상위 특가)"
@@ -420,10 +424,15 @@ def generate_html_email_body(data):
         for idx, item in enumerate(data['shorts_top3'], 1):
             score_info = f" (Bot Score: {item.get('bot_score', 0)}pt | {item.get('priority_label', '')})"
             disp_title = html.escape(item.get('display_title', item['title']))
+            link_url = html.escape(item.get('link', '#'))
+            if link_url and link_url != '#':
+                title_link_html = f'<a href="{link_url}" target="_blank" style="color: #166534; font-weight: bold; text-decoration: underline;">{disp_title}</a>'
+            else:
+                title_link_html = disp_title
             html_code += f"""
             <div class="card">
-              <div class="card-title">{idx}. [{item['category']}] {disp_title}{score_info}</div>
-              <div class="card-reason">💡 <b>혜택 파급력:</b> <i>{html.escape(item['reason'])}</i></div>
+              <div class="card-title">{idx}. [{item['category']}] {title_link_html}{score_info}</div>
+              <div class="card-reason">💡 <b>핵심 이슈 팩트:</b> <i>{html.escape(item['reason'])}</i></div>
               <div class="card-hook">🎯 <b>3초 Hook 멘트:</b> {html.escape(item.get('hook', ''))}</div>
               <div class="card-script">⏱️ <b>30초 숏츠 개요:</b> {html.escape(item.get('script', ''))}</div>
             </div>
@@ -647,48 +656,66 @@ def clean_text(text):
         return ""
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
+def clean_title_for_display(title):
+    if not title:
+        return ""
+    cleaned = re.sub(r'^\s*\[.*?\]\s*', '', title)
+    cleaned = re.sub(r'^\s*\(.*?\)\s*', '', cleaned)
+    cleaned = re.sub(r'\s*-\s*[A-Za-z0-9가-힣\.]+\.(com|kr|co\.za|net|org|news|tv|io|site)$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\s*-\s*[A-Za-z0-9가-힣]+뉴스$', '', cleaned)
+    cleaned = re.sub(r'\s*-\s*[A-Za-z0-9가-힣]+일보$', '', cleaned)
+    cleaned = re.sub(r'\s*-\s*SABC News$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\s*-\s*News24$', '', cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
+
+def generate_fact_based_shorts_info(item_title, category_name, priority_label):
+    """
+    기사 제목의 실제 팩트(Fact)에 기반하여
+    과장이나 오해(Misleading)가 없는 100% 팩트 중심 Shorts 정보 및 3초 Hook 멘트 생성
+    """
+    clean_t = clean_title_for_display(item_title)
+    if not clean_t:
+        clean_t = item_title
+
+    t_lower = clean_t.lower()
+
+    # 1. 팩트 기반 핵심 이슈 설명
+    reason = f"기사 팩트: '{clean_t}' ({priority_label})"
+
+    # 2. 팩트 기반 3초 Hook 멘트 및 30초 스크립트 개요
+    if any(k in t_lower for k in ["티켓 오픈", "공연", "콘서트", "월드투어", "예매", "전시", "축제"]):
+        hook = f"'{clean_t} - 티켓 오픈 및 행사 일정 확인하세요!'"
+        script = "[0~3초] 공연/행사 티켓 오픈 소식 → [3~20초] 일시 및 장소/예매 정보 → [20~30초] 예매 일정 저장 유도"
+    elif any(k in t_lower for k in ["항공권", "비행기", "특가 항공", "노선", "flight", "airline", "airfare", "항공"]):
+        hook = f"'{clean_t} - 특가 항공권 및 예매 일정!'"
+        script = "[0~3초] 항공권 특가 소식 → [3~20초] 노선 및 일정 안내 → [20~30초] 예매 정보 저장 유도"
+    elif any(k in t_lower for k in ["공짜", "무료", "0원", "free"]):
+        hook = f"'{clean_t} - 무료 혜택 및 이용 방법!'"
+        script = "[0~3초] 무료 혜택 소식 → [3~20초] 대상 및 상세 혜택 안내 → [20~30초] 혜택 저장 유도"
+    elif any(k in t_lower for k in ["세일", "할인", "마트", "1+1", "반값", "특산물", "식료품", "sale", "discount", "프로모션"]):
+        hook = f"'{clean_t} - 주요 할인 품목 및 세일 일정!'"
+        script = "[0~3초] 세일/할인 소식 → [3~20초] 주요 할인 품목 소개 → [20~30초] 장보기/구매 유도"
+    else:
+        hook = f"'{clean_t} - 핵심 내용 확인하세요!'"
+        script = "[0~3초] 주요 소식 개요 → [3~20초] 핵심 이슈 안내 → [20~30초] 관련 정보 저장 유도"
+
+    return reason, hook, script
+
 def select_top_shorts_topics(data):
     candidates = []
     seen_titles = set()
 
-    sections_mapping = [
-        ('capetown_grocery', '🇿🇦 케이프타운 식료품',
-         '케이프타운 주요 슈퍼마켓(Checkers, Pick n Pay 등) 식료품 세일 소식',
-         '"케이프타운 마트 장보기 특가 할인! 오늘 장보러 가기 전 필독!"',
-         '[0~3초] 파격 할인 품목 강조 → [3~20초] 마트 혜택 정보 → [20~30초] "공유하기" 유도'),
-         
-        ('capetown_nongrocery', '🇿🇦 케이프타운 관광/숙박',
-         '케이프타운 로컬 투어, 호텔 및 관광지 무료/할인 입장 혜택',
-         '"케이프타운 여행객 필수! 지금 진행 중인 파격 관광 혜택!"',
-         '[0~3초] 3초 훅 멘트 → [3~20초] 주요 관광/숙박 혜택 안내 → [20~30초] "친구 태그" 유도'),
-
-        ('seoul_grocery', '🇰🇷 서울 식료품/마트',
-         '서울 대형마트(이마트, 롯데마트, 홈플러스) 반값 세일 및 1+1 혜택',
-         '"서울 대형마트 오늘부터 미친 세일! 이건 무조건 담아야 함!"',
-         '[0~3초] 1+1/반값 세일 훅 → [3~20초] 베스트 할인 품목 → [20~30초] 댓글 참여 유도'),
-
-        ('seoul_nongrocery', '🇰🇷 서울 관광/문화',
-         '서울 수도권 무료 전시, 축제, 호텔 얼리버드 및 문화 혜택',
-         '"서울에서 공짜로 즐기는 역대급 혜택, 이번 주말 가볼만한 곳!"',
-         '[0~3초] 무료/할인 훅 → [3~20초] 행사 위치 및 기간 → [20~30초] "저장해두기"'),
-
-        ('jeju_grocery', '🍊 제주 특산물/식료품',
-         '제주 감귤, 흑돼지, 수산물 등 로컬 특산물 및 마트 직송 할인',
-         '"제주도 특산물 직송 파격 할인가! 지금 사야 제일 쌉니다!"',
-         '[0~3초] 제주 특산물 visual 훅 → [3~20초] 할인 정보 → [20~30초] 구매 유도'),
-
-        ('jeju_nongrocery', '🍊 제주 관광/항공/숙박',
-         '제주도 초특가 항공권, 렌터카 및 리조트/호텔 프로모션',
-         '"제주도 비행기표/렌터카 미친 특가 떴다! 지금 예약하세요!"',
-         '[0~3초] 항공/렌터카 가격 훅 → [3~20초] 예약 정보 → [20~30초] 공유 유도'),
-
-        ('airline_deals', '✈️ 다구간 항공권 특가',
-         '케이프타운 · 서울 중심 (중간 경유지 불문) 다구간/경유 항공권 최상위 파격 특가',
-         '"케이프타운-서울 노선 미친 항공권 특가 나왔다! 경유지 상관없이 무조건 저장!"',
-         '[0~3초] 케이프타운/서울 항공권 가격 훅 → [3~20초] 항공사 및 경유지 안내 → [20~30초] "저장해두고 예매하기"')
+    sections = [
+        ('capetown_grocery', '🇿🇦 케이프타운 식료품'),
+        ('capetown_nongrocery', '🇿🇦 케이프타운 관광/숙박'),
+        ('seoul_grocery', '🇰🇷 서울 식료품/마트'),
+        ('seoul_nongrocery', '🇰🇷 서울 관광/문화'),
+        ('jeju_grocery', '🍊 제주 특산물/식료품'),
+        ('jeju_nongrocery', '🍊 제주 관광/항공/숙박'),
+        ('airline_deals', '✈️ 다구간/경유 항공권 특가')
     ]
 
-    for sec_key, category_name, reason_fmt, hook_fmt, script_fmt in sections_mapping:
+    for sec_key, category_name in sections:
         items = data.get(sec_key, [])
         for item in items:
             raw_t = item.get('title', '')
@@ -697,18 +724,23 @@ def select_top_shorts_topics(data):
             seen_titles.add(raw_t)
             
             disp_t = item.get('display_title', raw_t)
+            title_ko = item.get('title_ko', '') or raw_t
             
-            priority_score, priority_label = evaluate_deal_priority_score(raw_t)
+            priority_score, priority_label = evaluate_deal_priority_score(raw_t, title_ko)
             trends_score, is_breakout = calculate_google_trends_score(raw_t)
             bot_score = round((0.5 * priority_score) + (0.5 * trends_score), 2)
+            
+            # 100% Fact-based Reason, Hook, Script
+            reason, hook, script = generate_fact_based_shorts_info(disp_t, category_name, priority_label)
             
             candidates.append({
                 'category': category_name,
                 'title': raw_t,
                 'display_title': disp_t,
-                'reason': f"{reason_fmt} ({priority_label})",
-                'hook': hook_fmt,
-                'script': script_fmt,
+                'link': item.get('link', ''),
+                'reason': reason,
+                'hook': hook,
+                'script': script,
                 'bot_score': bot_score,
                 'priority_label': priority_label
             })
@@ -879,15 +911,21 @@ def create_pdf_bytes(data):
     if data['shorts_top3']:
         for idx, item in enumerate(data['shorts_top3'], 1):
             clean_t = clean_text(item.get('display_title', item['title']))
+            link_url = html.escape(item.get('link', ''))
             clean_r = clean_text(item['reason'])
             clean_hk = clean_text(item.get('hook', ''))
             clean_sc = clean_text(item.get('script', ''))
             bot_sc = item.get('bot_score', 0)
             
+            if link_url:
+                title_p_str = f"<b>{idx}. [{item['category']}]</b> <a href=\"{link_url}\">{clean_t}</a> <font color='#16A34A'><b>(Bot Score: {bot_sc}점)</b></font>"
+            else:
+                title_p_str = f"<b>{idx}. [{item['category']}]</b> {clean_t} <font color='#16A34A'><b>(Bot Score: {bot_sc}점)</b></font>"
+            
             card_p_list = [
-                Paragraph(f"<b>{idx}. [{item['category']}]</b> {clean_t} <font color='#16A34A'><b>(Bot Score: {bot_sc}점)</b></font>", card_title_style),
+                Paragraph(title_p_str, card_title_style),
                 Spacer(1, 2),
-                Paragraph(f"💡 <b>혜택 파급력:</b> <i>{clean_r}</i>", card_reason_style),
+                Paragraph(f"💡 <b>핵심 이슈 팩트:</b> <i>{clean_r}</i>", card_reason_style),
                 Spacer(1, 2),
                 Paragraph(f"🎯 <b>3초 Hook 멘트:</b> {clean_hk}", card_hook_style),
                 Spacer(1, 2),
