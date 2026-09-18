@@ -270,7 +270,13 @@ def get_gdrive_service():
     client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
     refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
     
-    if not all([client_id, client_secret, refresh_token]):
+    missing = []
+    if not client_id: missing.append("GDRIVE_CLIENT_ID")
+    if not client_secret: missing.append("GDRIVE_CLIENT_SECRET")
+    if not refresh_token: missing.append("GDRIVE_REFRESH_TOKEN")
+    
+    if missing:
+        print(f"⚠️ 구글 드라이브 인증 환경변수가 누락되었습니다: {', '.join(missing)}")
         return None
         
     creds = Credentials(
@@ -936,8 +942,12 @@ def create_pdf_bytes(data):
     return buffer.getvalue()
 
 def upload_to_gdrive(service, folder_id, pdf_bytes, time_str):
+    if not folder_id:
+        print("⚠️ 환경변수 GDRIVE_FOLDER_ID가 비어있거나 설정되지 않았습니다.")
+    if not service:
+        print("⚠️ 구글 드라이브 서비스 생성 실패 (GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET, GDRIVE_REFRESH_TOKEN 중 일부 누락).")
     if not service or not folder_id:
-        print("❌ 구글 드라이브 설정이 누락되었습니다.")
+        print("❌ 구글 드라이브 설정 누락으로 리포트 업로드를 중단합니다. Secrets 설정을 확인해 주세요.")
         sys.exit(1)
         
     try:
