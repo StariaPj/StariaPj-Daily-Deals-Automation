@@ -150,18 +150,24 @@ def detect_country_tag(title_raw, title_ko="", lang_zone=""):
     
     za_keywords = ["남아공", "south africa", "케이프", "cape town", "gauteng", "요하네스버그", "johannesburg", "western cape", "stellenbosch", "pretoria", "durban", "checkers", "pick n pay", "woolworths"]
     kr_keywords = ["한국", "대한민국", "korea", "서울", "seoul", "제주", "jeju", "이마트", "롯데마트", "홈플러스", "k-", "olle"]
-    
+    us_keywords = ["미국", "usa", "texas", "텍사스", "san marcos", "산마르코스", "샌마르코스", "h-e-b", "heb", "tanger"]
+
     has_za = any(k in combined for k in za_keywords)
     has_kr = any(k in combined for k in kr_keywords)
-    
-    if has_za and not has_kr:
+    has_us = any(k in combined for k in us_keywords)
+
+    if has_us:
+        return "US"
+    elif has_za and not has_kr:
         return "ZA"
     elif has_kr and not has_za:
         return "KR"
     elif has_za and has_kr:
         return "ZA" if lang_zone == "ZA" else "KR"
     else:
-        if lang_zone == "ZA":
+        if lang_zone == "US":
+            return "US"
+        elif lang_zone == "ZA":
             return "ZA"
         elif lang_zone == "KR":
             return "KR"
@@ -184,7 +190,7 @@ def detect_eligibility_code(title_raw, title_ko=""):
 def format_display_title(country_tag, title_ko, eligibility_code="(1)"):
     """최종 헤드라인을 '[태그] (코드) 한글제목' 양식으로 정밀 포맷팅"""
     tag = country_tag.upper() if country_tag else "NO"
-    if tag not in ["ZA", "KR", "NO"]:
+    if tag not in ["ZA", "KR", "US", "NO"]:
         tag = "NO"
         
     clean_ko = re.sub(r'^\s*\[(ZA|KR|NO|No|ZR)\]\s*', '', title_ko, flags=re.IGNORECASE)
@@ -246,7 +252,7 @@ def evaluate_deal_priority_score(title, text=""):
 
     has_free = any(k in full_text for k in ["공짜", "무료", "free", "0원", "무료입장", "1+1", "free ticket"])
     has_big_discount = any(k in full_text for k in ["특가", "반값", "50%", "70%", "80%", "초특가", "할인", "sale", "special", "deal", "promo", "discount", "multi-city", "transit", "layover"])
-    has_location = any(k in full_text for k in ["케이프타운", "cape town", "서울", "seoul", "제주", "jeju", "두바이", "dubai", "도하", "doha", "싱가포르", "singapore"])
+    has_location = any(k in full_text for k in ["케이프타운", "cape town", "서울", "seoul", "제주", "jeju", "산마르코스", "san marcos", "texas", "텍사스", "두바이", "dubai", "도하", "doha", "싱가포르", "singapore"])
     has_sector = any(k in full_text for k in ["관광", "tourism", "여행", "hotel", "항공권", "flight", "식료품", "grocery", "마트", "supermarket"])
     
     if has_free:
@@ -411,7 +417,7 @@ def generate_html_email_body(data):
 <body>
   <div class="container">
     <div class="title">🎁 StariaPj Special Deals &amp; Discounts Report</div>
-    <div class="subtitle">발행 일시: {data['now_kst_str']} (KST) | 케이프타운 · 서울 · 제주 · 항공권 공짜 · 특가 · 세일 전용 소식지</div>
+    <div class="subtitle">발행 일시: {data['now_kst_str']} (KST) | 케이프타운 · 서울 · 제주 · 샌마르코스(텍사스) · 항공권 공짜 · 특가 · 세일 전용 소식지</div>
     <div class="eligibility-notice">
       <b>📌 혜택 대상 안내:</b><br>{ELIGIBILITY_NOTICE_TXT}
     </div>
@@ -442,7 +448,7 @@ def generate_html_email_body(data):
         
     html_code += '<hr style="border:0; height:1px; background:#DCFCE7; margin:15px 0;">'
 
-    # 4개 카테고리 순서 엄격 고정: 1. Cape Town -> 2. Seoul -> 3. Jeju -> 4. Special Airlines deals
+    # 5개 카테고리 순서 엄격 고정: 1. Cape Town -> 2. Seoul -> 3. Jeju -> 4. San Marcos, Texas -> 5. Special Airlines deals
     sections = [
         ('capetown_grocery', '🇿🇦 1-1. [Cape Town | 케이프타운] 🛒 [식료품] 마트 & 식자재 공짜 · 특가 · 세일', True),
         ('capetown_nongrocery', '🇿🇦 1-2. [Cape Town | 케이프타운] 🏨 [식료품 이외] 관광 · 숙박 · 체험 · 기타 특가', True),
@@ -450,7 +456,9 @@ def generate_html_email_body(data):
         ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
         ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
+        ('sanmarcos_grocery', '🇺🇸 4-1. [San Marcos, Texas | 샌마르코스] 🛒 [식료품] 마트 & 식자재 특가 · 세일', True),
+        ('sanmarcos_nongrocery', '🇺🇸 4-2. [San Marcos, Texas | 샌마르코스] 🛍️ [식료품 이외] 아울렛 · 쇼핑 · 관광 · 기타 특가', True),
+        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
@@ -512,7 +520,7 @@ def send_email_with_pdf(pdf_bytes, report_data, recipients=None):
         msg = MIMEMultipart('mixed')
         msg['From'] = sender_user
         msg['To'] = ", ".join(recipients)
-        msg['Subject'] = f"[StariaPj Deals] Cape Town · 서울 · 제주 · 다구간 항공권 특가 소식지 ({time_str} KST)"
+        msg['Subject'] = f"[StariaPj Deals] Cape Town · 서울 · 제주 · San Marcos(Texas) · 항공권 특가 소식지 ({time_str} KST)"
 
         html_body = generate_html_email_body(report_data)
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
@@ -537,6 +545,8 @@ def fetch_google_news_rss_realtime(query, lang_zone="KR", max_hours=24):
     
     if lang_zone == "ZA":
         url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-ZA&gl=ZA&ceid=ZA:en"
+    elif lang_zone == "US":
+        url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
     else:
         url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
 
@@ -712,6 +722,8 @@ def select_top_shorts_topics(data):
         ('seoul_nongrocery', '🇰🇷 서울 관광/문화'),
         ('jeju_grocery', '🍊 제주 특산물/식료품'),
         ('jeju_nongrocery', '🍊 제주 관광/항공/숙박'),
+        ('sanmarcos_grocery', '🇺🇸 산마르코스 식료품/마트'),
+        ('sanmarcos_nongrocery', '🇺🇸 산마르코스 관광/아울렛/쇼핑'),
         ('airline_deals', '✈️ 다구간/경유 항공권 특가')
     ]
 
@@ -769,6 +781,11 @@ def generate_report_data(service, folder_id):
         'airline_deals_kr': '(케이프타운 OR 서울 OR 제주 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
     }
 
+    queries_us = {
+        'sanmarcos_grocery': '("San Marcos" AND "Texas") (grocery OR supermarket OR HEB OR "H-E-B" OR Walmart OR Target OR food OR meat OR produce OR discount OR deal OR special OR promo)',
+        'sanmarcos_nongrocery': '("San Marcos" AND "Texas") (outlet OR shopping OR "San Marcos Premium Outlets" OR Tanger OR hotel OR tourism OR river OR tour OR event OR ticket OR discount OR deal OR special OR offer OR "free entry" OR promo)'
+    }
+
     report_data = {
         'time_str': time_str,
         'now_kst_str': now_kst.strftime('%Y-%m-%d %H:%M:%S')
@@ -816,7 +833,21 @@ def generate_report_data(service, folder_id):
     report_data['jeju_nongrocery'] = merged_jeju_ng
     new_cache['jeju_nongrocery'] = merged_jeju_ng
 
-    # 4. Special Airlines Deals (limit=15)
+    # 4-1. San Marcos Grocery Deals (limit=15)
+    raw_sm_g = fetch_google_news_rss_realtime(queries_us['sanmarcos_grocery'], lang_zone="US")
+    cached_sm_g = old_cache.get('sanmarcos_grocery', [])
+    merged_sm_g = merge_and_filter_entries(raw_sm_g, cached_sm_g, max_hours=24, limit=15)
+    report_data['sanmarcos_grocery'] = merged_sm_g
+    new_cache['sanmarcos_grocery'] = merged_sm_g
+
+    # 4-2. San Marcos Non-Grocery Deals (limit=15)
+    raw_sm_ng = fetch_google_news_rss_realtime(queries_us['sanmarcos_nongrocery'], lang_zone="US")
+    cached_sm_ng = old_cache.get('sanmarcos_nongrocery', [])
+    merged_sm_ng = merge_and_filter_entries(raw_sm_ng, cached_sm_ng, max_hours=24, limit=15)
+    report_data['sanmarcos_nongrocery'] = merged_sm_ng
+    new_cache['sanmarcos_nongrocery'] = merged_sm_ng
+
+    # 5. Special Airlines Deals (limit=15)
     raw_al_za = fetch_google_news_rss_realtime(queries_za['airline_deals_za'], lang_zone="ZA")
     raw_al_kr = fetch_google_news_rss_realtime(queries_kr['airline_deals_kr'], lang_zone="KR")
     raw_al = raw_al_za + raw_al_kr
@@ -876,7 +907,7 @@ def create_pdf_bytes(data):
     story = []
 
     story.append(Paragraph("🎁 StariaPj Special Deals &amp; Discounts Report", title_style))
-    story.append(Paragraph(f"발행 일시: {data['now_kst_str']} (KST) | 케이프타운 · 서울 · 제주 · 다구간 항공권 공짜 · 특가 · 세일 리포트", subtitle_style))
+    story.append(Paragraph(f"발행 일시: {data['now_kst_str']} (KST) | 케이프타운 · 서울 · 제주 · 샌마르코스(텍사스) · 항공권 공짜 · 특가 · 세일 리포트", subtitle_style))
     
     # 맨 위 혜택 대상 안내 고정 박스
     notice_p = Paragraph(f"<b>📌 혜택 대상 안내:</b><br/>{ELIGIBILITY_NOTICE_TXT}", notice_style)
@@ -978,7 +1009,9 @@ def create_pdf_bytes(data):
         ('seoul_nongrocery', '🇰🇷 2-2. [Seoul | 서울] 🏛️ [식료품 이외] 관광 · 문화 · 호텔 · 기타 특가', True),
         ('jeju_grocery', '🍊 3-1. [Jeju | 제주] 🛒 [식료품] 로컬 특산물 & 마트 공짜 · 특가 · 세일', True),
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
-        ('airline_deals', '✈️ 4. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
+        ('sanmarcos_grocery', '🇺🇸 4-1. [San Marcos, Texas | 샌마르코스] 🛒 [식료품] 마트 & 식자재 특가 · 세일', True),
+        ('sanmarcos_nongrocery', '🇺🇸 4-2. [San Marcos, Texas | 샌마르코스] 🛍️ [식료품 이외] 아울렛 · 쇼핑 · 관광 · 기타 특가', True),
+        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
     ]
 
     for key, sec_title, is_alert in sections:
@@ -1099,4 +1132,7 @@ if __name__ == "__main__":
     2. Fact-based 3초 Hook & 30초 Shorts script generation based on actual article titles.
 - v8.0 (2026-09-18): Added hyperlinked titles to Shorts TOP 3 section for direct article access.
 - v9.0 (2026-09-18): Appended automated Version History block at the end of code.
+- v10.0 (2026-09-18):
+    1. Added 4th city: San Marcos, Texas (🇺🇸 [San Marcos, Texas] 🛒 식료품 / 🛍️ 아울렛·쇼핑·관광·기타 특가).
+    2. Relocated Special Airlines Deals (항공권 특가) to the final section (Section 5).
 """
