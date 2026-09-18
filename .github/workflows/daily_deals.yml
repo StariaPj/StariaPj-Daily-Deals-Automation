@@ -1,0 +1,35 @@
+name: StariaPj Daily Deals Automation
+
+on:
+  schedule:
+    # ⏰ 매일 한국 시각(KST) 오전 08:30 자동 발송 (UTC 23:30)
+    - cron: '30 23 * * *'
+  workflow_dispatch: # Actions 탭에서 수동 실행(Run workflow) 버튼 활성화
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests feedparser reportlab google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Run Deals Bot
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          RECIPIENTS: ${{ secrets.RECIPIENTS }}
+        run: python main_deals.py
