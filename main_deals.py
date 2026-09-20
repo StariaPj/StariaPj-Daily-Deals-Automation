@@ -506,7 +506,7 @@ def send_email_with_pdf(pdf_bytes, report_data, recipients=None):
         if env_recipients:
             recipients = [r.strip() for r in env_recipients.split(",") if r.strip()]
         else:
-            recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com"]
+            recipients = ["pj2gwk@gmail.com", "miyoungchoi88@gmail.com", "kimgiwoong5@gmail.com", "staria4pj@gmail.com"]
         
     sender_user = os.environ.get("EMAIL_USER")
     sender_pass = os.environ.get("EMAIL_PASS")
