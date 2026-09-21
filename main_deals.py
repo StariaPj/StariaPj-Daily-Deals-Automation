@@ -225,10 +225,12 @@ def decode_google_news_url(url, title=""):
         return f"https://www.google.com/search?q={urllib.parse.quote(title)}"
     return url
 
+
+
 def evaluate_deal_priority_score(title, text=""):
     """
     Deals & Specials 파급력 및 우선순위 산정 함수:
-    - ✈️ 케이프타운 · 서울 출발/도착 항공권 특가: 단연 1위 (105~110점 최상위)
+    - ✈️ 케이프타운 ↔ 서울 (경유지 불문) 주요 항공사 특가: 단연 1위 (105~110점 최상위)
     - 공짜/무료/1+1: 100점
     - 반값/50% 이상 초특가: 85점
     - 일반 할인/프로모션: 70점
@@ -236,20 +238,29 @@ def evaluate_deal_priority_score(title, text=""):
     """
     full_text = (title + " " + text).lower()
     
-    # ✈️ 항공권/비행기표 전용 키워드 (단독 '티켓'/'ticket'은 공연/전시 티켓과 오인되므로 제외)
-    is_airline_deal = any(k in full_text for k in [
+    # 주요 항공사 키워드 (싱가포르, 에미레이트, 카타르, 에티오피아, 중국국적기, 대한항공 등)
+    major_airlines = [
+        "싱가포르", "singapore airlines", "에미레이트", "emirates", "카타르", "qatar", 
+        "에티오피아", "ethiopian", "대한항공", "korean air", "에어차이나", "air china", 
+        "동방항공", "china eastern", "남방항공", "china southern", "캐세이", "cathay", 
+        "아시아나", "asiana", "중국국적"
+    ]
+    has_major_airline = any(k in full_text for k in major_airlines)
+
+    # ✈️ 항공권/비행기표 전용 키워드
+    is_airline_deal = has_major_airline or any(k in full_text for k in [
         "항공권", "비행기표", "항공 노선", "flight", "airline", "airfare", 
         "flight ticket", "plane ticket", "다구간 항공", "경유 항공", "국제선", "국내선"
     ])
-    has_capetown = any(k in full_text for k in ["케이프타운", "cape town", "cpt"])
-    has_seoul = any(k in full_text for k in ["서울", "seoul", "icn", "gmp"])
+    has_capetown = any(k in full_text for k in ["케이프타운", "cape town", "cpt", "남아공", "south africa"])
+    has_seoul = any(k in full_text for k in ["서울", "seoul", "icn", "gmp", "한국", "korea"])
     
-    # 항공권 특가 중 출발지/도착지가 케이프타운 또는 서울인 경우 경유지 상관없이 최상위 P1 우선순위 부여
+    # 케이프타운 ↔ 서울 노선 (중간 경유지 불문) 주요 항공사 특가에 최상위 P1 우선순위 부여
     if is_airline_deal and (has_capetown or has_seoul):
         if has_capetown and has_seoul:
-            return 110.0, "P1🔥 (케이프타운-서울 노선 최상위 특가)"
+            return 110.0, "P1🔥 (케이프타운 ↔ 서울 주요 항공사 최상위 특가)"
         else:
-            return 105.0, "P1✈️ (케이프타운/서울 핵심 노선 항공 특가)"
+            return 105.0, "P1✈️ (케이프타운 ↔ 서울 노선 항공 프로모션)"
 
     has_free = any(k in full_text for k in ["공짜", "무료", "free", "0원", "무료입장", "1+1", "free ticket"])
     has_big_discount = any(k in full_text for k in ["특가", "반값", "50%", "70%", "80%", "초특가", "할인", "sale", "special", "deal", "promo", "discount", "multi-city", "transit", "layover"])
@@ -270,6 +281,8 @@ def evaluate_deal_priority_score(title, text=""):
         label = "P4 (일반 혜택)"
         
     return score, label
+
+
 
 def calculate_google_trends_score(title):
     """Real-time Google Trends 및 바이럴 지수 산출"""
@@ -788,7 +801,7 @@ def generate_report_data(service, folder_id):
     queries_za = {
         'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo OR "weekly ad" OR flyer OR savings)',
         'capetown_nongrocery': '("Cape Town" OR "Western Cape") (tourism OR hotel OR flight OR attraction OR museum OR tour OR event OR festival OR ticket OR rental OR discount OR deal OR special OR offer OR "free entry" OR promo)',
-        'airline_deals_za': '("Cape Town" OR "Seoul" OR "Dubai" OR "Doha" OR "Singapore" OR "Emirates" OR "Qatar Airways" OR "Singapore Airlines" OR "Ethiopian") (flight OR airline OR ticket OR "multi-city" OR transit OR layover) (deal OR special OR discount OR promo OR fare)'
+        'airline_deals_za': '("Cape Town" OR "Seoul" OR "Cape Town to Seoul" OR "Seoul to Cape Town" OR "CPT" OR "ICN") ("Singapore Airlines" OR "Emirates" OR "Qatar Airways" OR "Ethiopian Airlines" OR "Korean Air" OR "Air China" OR "China Eastern" OR "China Southern" OR "Cathay Pacific" OR "Asiana" OR "airline" OR "flight") (deal OR special OR discount OR promo OR fare OR sale OR offer OR "flight deal" OR promotion)'
     }
 
     queries_kr = {
@@ -796,7 +809,7 @@ def generate_report_data(service, folder_id):
         'seoul_nongrocery': '서울 (관광 OR 여행 OR 호텔 OR 숙박 OR 티켓 OR 전시 OR 공연 OR 축제 OR 무료 OR 혜택 OR 프로모션 OR 할인 OR 세일)',
         'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1 OR 전단 OR 직송 OR 초특가)',
         'jeju_nongrocery': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 리조트 OR 렌터카 OR 올레길 OR 입장권 OR 혜택 OR 할인 OR 프로모션)',
-        'airline_deals_kr': '(케이프타운 OR 서울 OR 제주 OR 두바이 OR 도하 OR 싱가포르) (항공권 OR 비행기표 OR 다구간 OR 경유 OR 레이오버) (특가 OR 할인 OR 프로모션 OR 세일)'
+        'airline_deals_kr': '("케이프타운" OR "서울" OR "남아공" OR "한국") ("싱가포르항공" OR "에미레이트" OR "카타르항공" OR "에티오피아항공" OR "대한항공" OR "중국국적항공사" OR "에어차이나" OR "동방항공" OR "남방항공" OR "캐세이퍼시픽" OR "아시아나항공" OR "항공사") (항공권 OR 비행기표 OR 특가 OR 할인 OR 프로모션 OR 세일 OR 이벤트 OR 얼리버드)'
     }
 
     queries_us = {
@@ -1029,7 +1042,7 @@ def create_pdf_bytes(data):
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
         ('sanmarcos_grocery', '🇺🇸 4-1. [San Marcos, Texas | 샌마르코스] 🛒 [식료품] 마트 & 식자재 특가 · 세일', True),
         ('sanmarcos_nongrocery', '🇺🇸 4-2. [San Marcos, Texas | 샌마르코스] 🛍️ [식료품 이외] 아울렛 · 쇼핑 · 관광 · 기타 특가', True),
-        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
+        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 ↔ 서울 (경유지 불문) 주요 항공사 특가 & 프로모션', True)
     ]
 
     for key, sec_title, is_alert in sections:
