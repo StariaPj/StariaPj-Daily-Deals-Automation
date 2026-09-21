@@ -488,7 +488,7 @@ def generate_html_email_body(data):
         ('jeju_nongrocery', '🍊 3-2. [Jeju | 제주] 🏖️ [식료품 이외] 관광 · 항공 · 숙박 · 기타 특가', True),
         ('sanmarcos_grocery', '🇺🇸 4-1. [San Marcos, Texas | 샌마르코스] 🛒 [식료품] 마트 & 식자재 특가 · 세일', True),
         ('sanmarcos_nongrocery', '🇺🇸 4-2. [San Marcos, Texas | 샌마르코스] 🛍️ [식료품 이외] 아울렛 · 쇼핑 · 관광 · 기타 특가', True),
-        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 · 서울 출발/도착 (중간 경유지 불문) 최상위 항공권 특가', True)
+        ('airline_deals', '✈️ 5. [Special Airlines Deals] 케이프타운 ↔ 서울 (경유지 불문) 주요 항공사 특가 & 프로모션', True)
     ]
 
     for key, sec_title, is_alert in sections:
