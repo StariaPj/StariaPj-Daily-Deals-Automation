@@ -238,10 +238,11 @@ def evaluate_deal_priority_score(title, text=""):
     """
     full_text = (title + " " + text).lower()
     
-    # 주요 항공사 키워드 (에티하드 항공 추가 완료)
+    # 주요 항공사 키워드 (터키항공, 사우디아항공 추가 완료)
     major_airlines = [
         "싱가포르", "singapore airlines", "에미레이트", "emirates", "카타르", "qatar", 
-        "에티오피아", "ethiopian", "에티하드", "etihad", "대한항공", "korean air", 
+        "에티오피아", "ethiopian", "에티하드", "etihad", "터키항공", "turkish airlines", 
+        "사우디아", "saudia", "saudi arabian", "대한항공", "korean air", 
         "에어차이나", "air china", "동방항공", "china eastern", "남방항공", "china southern", 
         "캐세이", "cathay", "아시아나", "asiana", "중국국적"
     ]
@@ -801,7 +802,7 @@ def generate_report_data(service, folder_id):
     queries_za = {
         'capetown_grocery': '("Cape Town" OR "Western Cape") (grocery OR supermarket OR Checkers OR "Pick n Pay" OR Woolworths OR Shoprite OR "Food Lover" OR food OR meat OR produce OR dairy OR discount OR deal OR special OR promo OR "weekly ad" OR flyer OR savings)',
         'capetown_nongrocery': '("Cape Town" OR "Western Cape") (tourism OR hotel OR flight OR attraction OR museum OR tour OR event OR festival OR ticket OR rental OR discount OR deal OR special OR offer OR "free entry" OR promo)',
-        'airline_deals_za': '("Cape Town" OR "Seoul" OR "Cape Town to Seoul" OR "Seoul to Cape Town" OR "CPT" OR "ICN") ("Singapore Airlines" OR "Emirates" OR "Qatar Airways" OR "Ethiopian Airlines" OR "Etihad Airways" OR "Korean Air" OR "Air China" OR "China Eastern" OR "China Southern" OR "Cathay Pacific" OR "Asiana" OR "airline" OR "flight") (deal OR special OR discount OR promo OR fare OR sale OR offer OR "flight deal" OR promotion)'
+        'airline_deals_za': '("Cape Town" OR "Seoul" OR "Cape Town to Seoul" OR "Seoul to Cape Town" OR "CPT" OR "ICN") ("Singapore Airlines" OR "Emirates" OR "Qatar Airways" OR "Ethiopian Airlines" OR "Etihad Airways" OR "Turkish Airlines" OR "Saudia" OR "Korean Air" OR "Air China" OR "China Eastern" OR "China Southern" OR "Cathay Pacific" OR "Asiana" OR "airline" OR "flight") (deal OR special OR discount OR promo OR fare OR sale OR offer OR "flight deal" OR promotion)'
     }
 
     queries_kr = {
@@ -809,7 +810,7 @@ def generate_report_data(service, folder_id):
         'seoul_nongrocery': '서울 (관광 OR 여행 OR 호텔 OR 숙박 OR 티켓 OR 전시 OR 공연 OR 축제 OR 무료 OR 혜택 OR 프로모션 OR 할인 OR 세일)',
         'jeju_grocery': '제주 (식료품 OR 특산물 OR 마트 OR 감귤 OR 흑돼지 OR 수산물 OR 한라봉 OR 옥돔 OR 세일 OR 할인 OR 1+1 OR 전단 OR 직송 OR 초특가)',
         'jeju_nongrocery': '제주 (관광 OR 여행 OR 항공권 OR 호텔 OR 리조트 OR 렌터카 OR 올레길 OR 입장권 OR 혜택 OR 할인 OR 프로모션)',
-        'airline_deals_kr': '("케이프타운" OR "서울" OR "남아공" OR "한국") ("싱가포르항공" OR "에미레이트" OR "카타르항공" OR "에티오피아항공" OR "에티하드항공" OR "대한항공" OR "중국국적항공사" OR "에어차이나" OR "동방항공" OR "남방항공" OR "캐세이퍼시픽" OR "아시아나항공" OR "항공사") (항공권 OR 비행기표 OR 특가 OR 할인 OR 프로모션 OR 세일 OR 이벤트 OR 얼리버드)'
+        'airline_deals_kr': '("케이프타운" OR "서울" OR "남아공" OR "한국") ("싱가포르항공" OR "에미레이트" OR "카타르항공" OR "에티오피아항공" OR "에티하드항공" OR "터키항공" OR "사우디아항공" OR "대한항공" OR "중국국적항공사" OR "에어차이나" OR "동방항공" OR "남방항공" OR "캐세이퍼시픽" OR "아시아나항공" OR "항공사") (항공권 OR 비행기표 OR 특가 OR 할인 OR 프로모션 OR 세일 OR 이벤트 OR 얼리버드)'
     }
 
     queries_us = {
