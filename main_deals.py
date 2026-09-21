@@ -15,7 +15,8 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.credentials import Credentials as OAuthCredentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload, MediaIoBaseDownload
 
@@ -288,20 +289,35 @@ def calculate_google_trends_score(title):
     return round(min(100.0, trends_score), 1), is_breakout
 
 def get_gdrive_service():
+    """Google Drive API 서비스 객체 생성 (서비스 계정 우선 적용, OAuth2 백업)"""
+    # 1. 서비스 계정 (영구 인증 키) 우선 확인
+    sa_key_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT_KEY")
+    if sa_key_json:
+        try:
+            info = json.loads(sa_key_json)
+            creds = ServiceAccountCredentials.from_service_account_info(
+                info,
+                scopes=["https://www.googleapis.com/auth/drive"]
+            )
+            return build("drive", "v3", credentials=creds)
+        except Exception as e:
+            print(f"⚠️ 서비스 계정 인증 실패, OAuth로 전환 시도: {e}")
+
+    # 2. 기존 OAuth 2.0 방식 (백업)
     client_id = os.environ.get("GDRIVE_CLIENT_ID")
     client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
     refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
-    
+
     missing = []
     if not client_id: missing.append("GDRIVE_CLIENT_ID")
     if not client_secret: missing.append("GDRIVE_CLIENT_SECRET")
     if not refresh_token: missing.append("GDRIVE_REFRESH_TOKEN")
-    
+
     if missing:
         print(f"⚠️ 구글 드라이브 인증 환경변수가 누락되었습니다: {', '.join(missing)}")
         return None
-        
-    creds = Credentials(
+
+    creds = OAuthCredentials(
         token=None,
         refresh_token=refresh_token,
         token_uri="https://oauth2.googleapis.com/token",
@@ -310,6 +326,7 @@ def get_gdrive_service():
         scopes=["https://www.googleapis.com/auth/drive.file"]
     )
     return build("drive", "v3", credentials=creds)
+    
 
 def load_gdrive_cache(service, folder_id):
     if not service or not folder_id:
