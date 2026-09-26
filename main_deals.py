@@ -302,9 +302,10 @@ def calculate_google_trends_score(title):
     trends_score = base_score * 1.1 if is_breakout else base_score
     return round(min(100.0, trends_score), 1), is_breakout
 
+
 def get_gdrive_service():
-    """Google Drive API 서비스 객체 생성 (서비스 계정 우선 적용, OAuth2 백업)"""
-    # 1. 서비스 계정 (영구 인증 키) 우선 확인
+    """Google Drive API 서비스 객체 생성 (영구 인증 서비스 계정 우선 적용)"""
+    # 1. 영구 인증 서비스 계정 (Service Account) 우선 확인
     sa_key_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT_KEY")
     if sa_key_json:
         try:
@@ -317,7 +318,7 @@ def get_gdrive_service():
         except Exception as e:
             print(f"⚠️ 서비스 계정 인증 실패, OAuth로 전환 시도: {e}")
 
-    # 2. 기존 OAuth 2.0 방식 (백업)
+    # 2. 백업 OAuth 2.0 방식
     client_id = os.environ.get("GDRIVE_CLIENT_ID")
     client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
     refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
