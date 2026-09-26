@@ -33,3 +33,11 @@ jobs:
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           RECIPIENTS: ${{ secrets.RECIPIENTS }}
         run: python main_deals.py
+
+      - name: Run python main_deals.py
+        env:
+          GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }} # 👈 이 줄 추가 확인
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python main_deals.py
