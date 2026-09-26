@@ -1101,14 +1101,15 @@ def create_pdf_bytes(data):
     buffer.seek(0)
     return buffer.getvalue()
 
+
 def upload_to_gdrive(service, folder_id, pdf_bytes, time_str):
     if not folder_id:
         print("⚠️ 환경변수 GDRIVE_FOLDER_ID가 비어있거나 설정되지 않았습니다.")
     if not service:
-        print("⚠️ 구글 드라이브 서비스 생성 실패 (GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET, GDRIVE_REFRESH_TOKEN 중 일부 누락).")
+        print("⚠️ 구글 드라이브 서비스 생성 실패.")
     if not service or not folder_id:
-        print("❌ 구글 드라이브 설정 누락으로 리포트 업로드를 중단합니다. Secrets 설정을 확인해 주세요.")
-        sys.exit(1)
+        print("⚠️ 구글 드라이브 미설정으로 인해 드라이브 업로드를 스킵하고 이메일 발송으로 진행합니다.")
+        return
         
     try:
         filename = f"StariaPj_Deals_Report_{time_str}_KST.pdf"
@@ -1128,8 +1129,7 @@ def upload_to_gdrive(service, folder_id, pdf_bytes, time_str):
 
         print(f"✅ Google Drive Deals PDF 업로드 성공! (파일명: {filename}, ID: {file.get('id')})")
     except Exception as e:
-        print(f"❌ Google Drive Deals 업로드 실패: {e}")
-        sys.exit(1)
+        print(f"⚠️ Google Drive Deals 업로드 실패 (스킵 후 이메일 발송 진행): {e}")
 
 if __name__ == "__main__":
     folder_id = os.environ.get("GDRIVE_FOLDER_ID", "").strip().rstrip('/')
@@ -1146,6 +1146,7 @@ if __name__ == "__main__":
     upload_json_to_gdrive(service, folder_id, report_data['new_cache'], report_data['time_str'])
     save_gdrive_cache(service, folder_id, report_data['new_cache'])
     send_email_with_pdf(pdf_bytes, report_data)
+    
 
 
 # ==============================================================================
